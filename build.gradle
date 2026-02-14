@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+}
+
+project.ext.lwjglSdkVersion = "3.3.3" // Version stable actuelle
+project.ext.jomlVersion = "1.10.5"    // Biblio de maths (l'équivalent de GLM en C++)
+
+repositories {
+    mavenCentral()
+}
+
+// La magie opère ici : Détection de l'OS et de l'architecture
+import org.gradle.internal.os.OperatingSystem
+
+switch (OperatingSystem.current()) {
+    case OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+        break
+    case OperatingSystem.MAC_OS:
+        // C'est là que ton M2 est géré
+        if (System.getProperty("os.arch") == "aarch64") {
+            project.ext.lwjglNatives = "natives-macos-arm64"
+        } else {
+            project.ext.lwjglNatives = "natives-macos"
+        }
+        break
+    case OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+        break
+}
+
+dependencies {
+    // Le noyau LWJGL
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglSdkVersion")
+
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw" // Pour créer la fenêtre (comme la minilibx ou glfw en C)
+    implementation "org.lwjgl:lwjgl-opengl" // Les bindings OpenGL
+
+    // Les natifs (chargés dynamiquement selon la variable définie plus haut)
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    
+    // Maths (JOML)
+    implementation "org.joml:joml:$jomlVersion"
+}
